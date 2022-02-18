@@ -11,7 +11,6 @@ module Jets::Commands
     def run
       puts "Building project for Lambda..."
 
-      return if @options[:noop]
       # run gets called from the CLI and does not have all the stack_options yet.
       # We compute it and change the options early here.
       @options.merge!(stack_type: stack_type, s3_bucket: s3_bucket)
@@ -19,12 +18,12 @@ module Jets::Commands
     end
 
     def build
-      build_code unless @options[:templates]
-      build_templates
+      build_code
+      build_templates if @options[:templates]
     end
 
     def build_code
-      Jets::Builders::CodeBuilder.new.build unless @options[:noop]
+      Jets::Builders::CodeBuilder.new.build
     end
 
     def build_templates
