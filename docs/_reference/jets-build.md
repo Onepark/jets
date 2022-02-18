@@ -21,7 +21,6 @@ If the application has no Ruby code and only uses Polymorphic functions, then ge
 ## Options
 
 ```
-[--templates], [--no-templates]  # Only build the CloudFormation templates. Skip code building
-[--noop], [--no-noop]            
+[--templates]     # build also the CloudFormation templates
+[--no-templates]  # skip CloudFormation templates building (set by default)
 ```
-
