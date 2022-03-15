@@ -61,10 +61,12 @@ module Jets::Builders
 
       create_bundle_config
       require "bundler" # dynamically require bundler so user can use any bundler
+
+      github_token = ENV['BUNDLE_GITHUB__COM']
       Bundler.with_unbundled_env do
         sh(
           "cd #{cache_area} && " \
-          "env bundle install"
+          "env BUNDLE_GITHUB__COM=#{github_token} bundle install"
         )
       end
       create_bundle_config(frozen: true)
