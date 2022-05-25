@@ -82,12 +82,14 @@ class Jets::Controller
     alias_method :body_parameters, :body_params
 
   private
-
     def parse_multipart(body)
       boundary = ::Rack::Multipart::Parser.parse_boundary(headers["content-type"])
       options = multipart_options(body, boundary)
       env = ::Rack::MockRequest.env_for("/", options)
-      ::Rack::Multipart.parse_multipart(env) # params Hash
+
+      result = ::Rack::Multipart.parse_multipart(env) # params Hash
+      result['file'].transform_values! { |value| value.instance_of?(String) ? value.force_encoding('UTF-8') : value }
+      result
     end
 
     def multipart_options(data, boundary = "AaB03x")
