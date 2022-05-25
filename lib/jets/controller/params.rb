@@ -88,7 +88,7 @@ class Jets::Controller
       env = ::Rack::MockRequest.env_for("/", options)
 
       result = ::Rack::Multipart.parse_multipart(env) # params Hash
-      result['file'].transform_values! { |v| v.instance_of?(String) ? v.force_encoding('UTF-8') : v }
+      result['file'].transform_values! { |value| value.instance_of?(String) ? value.force_encoding('UTF-8') : value }
       result
     end
 
