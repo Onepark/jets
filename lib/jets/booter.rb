@@ -15,6 +15,7 @@ class Jets::Booter
       # in the project so setup must happen before internal Turbines are loaded.
       load_internal_turbines
 
+      load_application_turbines
       run_turbines(:initializers)
       # Load configs after Turbine initializers so Turbines can defined some config options and they are available in
       # user's project environment configs.
@@ -126,6 +127,12 @@ class Jets::Booter
         initializers.each do |label, block|
           block.call(Jets.application)
         end
+      end
+    end
+
+    def load_application_turbines
+      Dir.glob("#{Jets.root}/config/turbines/**/*").sort.each do |path|
+        require path
       end
     end
 
