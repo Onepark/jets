@@ -16,7 +16,8 @@ class Jets::Resource::Lambda::Function
     def jets_env
       env = {}
       env[:JETS_ENV] = Jets.env.to_s
-      env[:JETS_ENV_EXTRA] = Jets.config.env_extra if Jets.config.env_extra
+      env[:JETS_ENV_EXTRA] = Jets.extra if Jets.extra # keep JETS_ENV_EXTRA for backwards compatibility
+      env[:JETS_EXTRA] = Jets.extra if Jets.extra
       env[:JETS_PROJECT_NAME] = ENV['JETS_PROJECT_NAME'] if ENV['JETS_PROJECT_NAME']
       env[:JETS_STAGE] = Jets::Resource::ApiGateway::Deployment.stage_name
       env[:JETS_AWS_ACCOUNT] = Jets.aws.account
@@ -36,21 +37,23 @@ class Jets::Resource::Lambda::Function
       exit 1
     end
 
-    # https://docs.aws.amazon.com/lambda/latest/dg/current-supported-versions.html#lambda-environment-variables
+    # https://docs.aws.amazon.com/lambda/latest/dg/configuration-envvars.html
     def reserved_variables
       %w[
         _HANDLER
+        AWS_DEFAULT_REGION
         AWS_REGION
         AWS_EXECUTION_ENV
         AWS_LAMBDA_FUNCTION_NAME
         AWS_LAMBDA_FUNCTION_MEMORY_SIZE
         AWS_LAMBDA_FUNCTION_VERSION
+        AWS_LAMBDA_INITIALIZATION_TYPE
         AWS_LAMBDA_LOG_GROUP_NAME
         AWS_LAMBDA_LOG_STREAM_NAME
+        AWS_ACCESS_KEY
         AWS_ACCESS_KEY_ID
         AWS_SECRET_ACCESS_KEY
         AWS_SESSION_TOKEN
-        TZ
         LAMBDA_TASK_ROOT
         LAMBDA_RUNTIME_DIR
         AWS_LAMBDA_RUNTIME_API

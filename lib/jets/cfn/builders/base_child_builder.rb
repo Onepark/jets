@@ -18,7 +18,7 @@ module Jets::Cfn::Builders
 
     # template_path is an interface method for Interface module
     def template_path
-      Jets::Naming.app_template_path(@app_class)
+      Jets::Names.app_template_path(@app_class)
     end
 
     def add_common_parameters
@@ -40,6 +40,7 @@ module Jets::Cfn::Builders
     end
 
     def add_functions
+      validate_function_names!
       add_class_iam_policy
       @app_class.tasks.each do |task|
         add_function(task)
@@ -64,6 +65,24 @@ module Jets::Cfn::Builders
 
       resource = Jets::Resource::Iam::FunctionRole.new(task)
       add_resource(resource)
+    end
+
+    def validate_function_names!
+      invalids = @app_class.tasks.reject do |task|
+        task.meth.to_s =~ /^[a-zA-Z][a-zA-Z0-9_]/
+      end
+      return if invalids.empty?
+      list = invalids.map do |task|
+        "    #{task.class_name}##{task.meth}" # IE: PostsController#index
+      end.join("\n")
+      puts "ERROR: Detected invalid AWS Lambda function names".color(:red)
+      puts <<~EOL
+        Lambda function names must start with a letter and can only contain letters, numbers, and underscores.
+        Invalid function names:
+
+        #{list}
+      EOL
+      exit 1
     end
   end
 end

@@ -234,7 +234,13 @@ module Jets::Lambda::Dsl
       end
 
       def ref(name)
-        "!Ref #{name.to_s.camelize}"
+        name = name.is_a?(Symbol) ? name.to_s.camelize : name
+        "!Ref #{name}"
+      end
+
+      def sub(value)
+        value = value.is_a?(Symbol) ? value.to_s.camelize : value
+        "!Sub #{value}"
       end
 
       # meth is a Symbol
@@ -317,7 +323,8 @@ module Jets::Lambda::Dsl
       #
       # Do not include tasks from the direct subclasses of Jets::Lambda::Functions
       # because those classes are abstract.  Dont want those methods to be included.
-      def find_all_tasks(public: true)
+      def find_all_tasks(options={})
+        public = options[:public].nil? ? true : options[:public]
         klass = self
         direct_subclasses = Jets::Lambda::Functions.subclasses
         lookup = []

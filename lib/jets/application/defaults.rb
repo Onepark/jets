@@ -51,6 +51,7 @@ class Jets::Application
       config.autoload_paths = [] # allows for customization
       config.ignore_paths = [] # allows for customization
       config.logger = Jets::Logger.new($stderr)
+      config.logger.level = Logger::INFO
       config.time_zone = "UTC"
 
       # function properties defaults
@@ -162,6 +163,7 @@ class Jets::Application
 
       config.ruby = ActiveSupport::OrderedOptions.new
       config.ruby.check = true
+      config.ruby.supported_versions = %w[2.5 2.7 3.2] # supported by AWS Lambda
 
       config
     end
