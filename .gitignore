@@ -22,3 +22,5 @@ tmp
 Gemfile.lock
 spec/fixtures/apps/franky/dynamodb/migrate
 spec/fixtures/project/handlers
+
+.idea

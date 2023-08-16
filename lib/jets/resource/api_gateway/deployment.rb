@@ -33,7 +33,7 @@ module Jets::Resource::ApiGateway
     end
 
     def depends_on
-      expression = "#{Jets::Naming.template_path_prefix}-*_controller*"
+      expression = "#{Jets::Names.template_path_prefix}-*_controller*"
       controller_logical_ids = []
       Dir.glob(expression).each do |path|
         next unless File.file?(path)
@@ -57,7 +57,7 @@ module Jets::Resource::ApiGateway
 
     def self.stage_name
       # Stage name only allows a-zA-Z0-9_
-      [Jets.config.short_env, Jets.config.env_extra].compact.join('_').gsub('-','_')
+      [Jets.config.short_env, Jets.config.extra].compact.join('_').gsub('-','_')
     end
 
     def timestamp
