@@ -3,6 +3,29 @@
 All notable changes to this project will be documented in this file.
 This project *loosely tries* to adhere to [Semantic Versioning](http://semver.org/).
 
+## [4.0.10] - 2023-12-04
+- [#678](https://github.com/boltops-tools/jets/pull/678) handle option method or http_method from route state
+
+## [4.0.9] - 2023-12-03
+- [#674](https://github.com/boltops-tools/jets/pull/674) Fix broken --mode jobs new project generation
+- [#675](https://github.com/boltops-tools/jets/pull/675) Add resource tags to CloudFormation stack
+
+## [4.0.8] - 2023-12-03
+- [#677](https://github.com/boltops-tools/jets/pull/677) pin dynomite 1.2.7
+
+## [4.0.7] - 2023-10-20
+- [#671](https://github.com/boltops-tools/jets/pull/671) fix preheat warm job iam role reference
+
+## [4.0.6] - 2023-10-20
+- [#670](https://github.com/boltops-tools/jets/pull/670) Fixes IAM role permissions for PreheatJob
+
+## [4.0.5] - 2023-10-19
+- [#665](https://github.com/boltops-tools/jets/pull/665) only add add_stage_name when request is present
+- [#669](https://github.com/boltops-tools/jets/pull/669) Add optional command args to the jets runner command.
+
+## [4.0.4] - 2023-09-07
+- [#662](https://github.com/boltops-tools/jets/pull/662) fix vpc iam permissions
+
 ## [4.0.3] - 2023-08-03
 - [#657](https://github.com/boltops-tools/jets/pull/657) [Fix] ApiGateway for local Middleware: fix query_string_parameters
 
