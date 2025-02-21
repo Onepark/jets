@@ -1,6 +1,7 @@
 $stdout.sync = true unless ENV["JETS_STDOUT_SYNC"] == "0"
 $:.unshift(File.expand_path("../", __FILE__))
 
+require "logger"
 require "active_support"
 require "active_support/concern"
 require "active_support/core_ext"
