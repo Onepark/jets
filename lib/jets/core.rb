@@ -1,169 +1,88 @@
 module Jets::Core
   extend Memoist
 
-  def application
-    Jets::Application.instance
-  end
-
-  def config
-    application.config
-  end
-
-  def aws
-    application.aws
-  end
-
-  # Load all application base classes and project classes
-  def boot
-    Jets::Booter.boot!
-  end
-
   def root
-    # Do not memoize this method. Turbo mode can change it
-    root = ENV['JETS_ROOT'].to_s
-    root = Dir.pwd if root == ''
+    root = ENV["JETS_ROOT"].to_s
+    root = Dir.pwd if root == ""
     Pathname.new(root)
   end
+  memoize :root
 
   def env
-    env = ENV['JETS_ENV'] || 'development'
-    ENV['RAILS_ENV'] = ENV['RACK_ENV'] = env
+    env = ENV["JETS_ENV"] || "dev"
     ActiveSupport::StringInquirer.new(env)
   end
   memoize :env
 
-  @@extra_warning_shown = false
   def extra
-    # Keep for backwards compatibility
-    unless ENV['JETS_ENV_EXTRA'].blank?
-      puts "DEPRECATION WARNING: JETS_ENV_EXTRA is deprecated. Use JETS_EXTRA instead.".color(:yellow) unless @@extra_warning_shown
-      @@extra_warning_shown = true
-      extra = ENV['JETS_ENV_EXTRA']
-    end
-    extra = ENV['JETS_EXTRA'] unless ENV['JETS_EXTRA'].blank?
-    extra
+    ENV["JETS_EXTRA"] unless ENV["JETS_EXTRA"].blank?
   end
 
-def build_root
-    "/tmp/jets/#{config.project_name}".freeze
+  def project
+    Config::Project.instance
+  end
+
+  def bootstrap
+    Config::Bootstrap.instance
+  end
+
+  def shim
+    Jets::Shim
+  end
+
+  # Load project and app config files
+  def boot
+    Jets::Core::Booter.boot!
+  end
+
+  # delegate :aws, :autoloaders, :config, to: :application
+  def aws
+    Jets::AwsServices::AwsInfo.new
+  end
+  memoize :aws
+
+  # Frameworks can set Jets.logger to use their own logger.
+  cattr_accessor :logger
+  def logger
+    @logger ||= Jets.bootstrap.config.logger
+  end
+
+  def build_root
+    root = ENV["JETS_BUILD_ROOT"] || "/tmp/jets"
+    "#{root}/#{Jets.project.namespace}".freeze
   end
   memoize :build_root
 
-  def logger
-    Jets.application.config.logger
-  end
-  memoize :logger
-
-  def webpacker?
-    Gem.loaded_specs.keys.any?{|k| k.start_with?("webpacker")}
-  end
-  memoize :webpacker?
-
-  def load_tasks
-    Jets::Commands::RakeTasks.load!
+  def s3_bucket
+    Jets::Cfn::Resource::S3::JetsBucket.name
   end
 
-  def version
-    Jets::VERSION
-  end
-
-  # NOTE: In development this will always be 1 because the app gets reloaded.
-  # On AWS Lambda, this will be ever increasing until the container gets replaced.
-  @@call_count = 0
-  def increase_call_count
-    @@call_count += 1
-  end
-
-  def call_count
-    @@call_count
-  end
-
-  @@prewarm_count = 0
-  def increase_prewarm_count
-    @@prewarm_count += 1
-  end
-
-  def prewarm_count
-    @@prewarm_count
-  end
-
-  def project_namespace
-    [config.project_name, config.short_env, config.extra].compact.join('-').gsub('_','-')
-  end
-
-  def rack?
-    path = "#{Jets.root}/rack"
-    File.exist?(path) || File.symlink?(path)
-  end
-
-  def poly_only?
-    return true if ENV['JETS_POLY_ONLY'] # bypass to allow rapid development of handlers
-    Jets::Commands::Build.poly_only?
+  def deprecator # :nodoc:
+    @deprecator ||= ActiveSupport::Deprecation.new
   end
 
   def report_exception(exception)
-    puts "DEPRECATED: report_exception. Use on_exception instead.".color(:yellow)
-    on_exception(exception)
-  end
+    # See Jets::ExceptionReporting decorate_exception_with_exception_reported!
+    if exception.respond_to?(:with_exception_reported?) && exception.with_exception_reported?
+      return
+    end
 
-  def on_exception(exception)
-    Jets::Turbine.subclasses.each do |subclass|
-      reporters = subclass.on_exceptions || []
-      reporters.each do |label, block|
+    Jets.application.turbines.each do |turbine|
+      turbine.on_exception_blocks.each do |block|
         block.call(exception)
       end
     end
   end
 
-  def custom_domain?
-    Jets.config.domain.hosted_zone_name
-  end
-
-  def s3_event?
-    !Jets::Job::Base.s3_events.empty?
-  end
-
-  def process(event, context, handler)
-    if event['_prewarm']
-      Jets.increase_prewarm_count
-      Jets.logger.info("Prewarm request")
-      {prewarmed_at: Time.now.to_s}
-    else
-      Jets::Processors::MainProcessor.new(event, context, handler).run
-    end
-  end
-
-  def once
-    boot
-    override_lambda_ruby_runtime
-    tmp_load!
-    start_rack_server
-  end
-
-  def tmp_load!
-    Jets::TmpLoader.load!
-  end
-
-  # Megamode support
-  def start_rack_server(options={})
-    rack = Jets::RackServer.new(options)
-    rack.start
-    rack.wait_for_socket
-  end
-
-  def override_lambda_ruby_runtime
-    require "jets/overrides/lambda"
-  end
-
-  def ruby_folder
-    RUBY_VERSION.split('.')[0..1].join('.') + '.0'
-  end
-
-  # used to configure internal lambda functions
-  # current ruby runtime that user is running
-  # IE: ruby2.5 ruby2.7
-  def ruby_runtime
-    version = RUBY_VERSION.split('.')[0..1].join('.')
-    "ruby#{version}"
+  # Returns the ActiveSupport::ErrorReporter of the current \Jets project,
+  # otherwise it returns +nil+ if there is no project.
+  #
+  #   Jets.error.handle(IOError) do
+  #     # ...
+  #   end
+  #   Jets.error.report(error)
+  def error
+    application && application.executor.error_reporter
+    # ActiveSupport.error_reporter
   end
 end

@@ -1,215 +1,189 @@
-require "thor"
+module Jets
+  class CLI < Jets::Thor::Base
+    desc "ci SUBCOMMAND", "ci subcommands"
+    subcommand "ci", Ci
 
-class Jets::CLI
-  def self.start(given_args=ARGV)
-    new(given_args).start
-  end
+    desc "concurrency SUBCOMMAND", "concurrency subcommands"
+    subcommand "concurrency", Concurrency
 
-  def self.thor_tasks
-    Jets::Commands::Base.namespaced_commands
-  end
+    desc "dotenv SUBCOMMAND", "dotenv subcommands"
+    subcommand "dotenv", Dotenv
 
-  def initialize(given_args=ARGV, **config)
-    @given_args = given_args.dup
-    @config = config
-  end
+    desc "env SUBCOMMAND", "env subcommands"
+    subcommand "env", Env
 
-  def start
-    # Needs to be at the beginning to avoid boot_jets which causes some load errors
-    if version_requested?
-      puts Jets.version
-      return
+    desc "generate SUBCOMMAND", "generate subcommands"
+    subcommand "generate", Generate
+
+    desc "git SUBCOMMAND", "git subcommands"
+    subcommand "git", Git
+
+    desc "maintenance SUBCOMMAND", "maintenance subcommands"
+    subcommand "maintenance", Maintenance
+
+    desc "package SUBCOMMAND", "package subcommands"
+    subcommand "package", Package
+
+    desc "release SUBCOMMAND", "release subcommands"
+    subcommand "release", Release
+
+    desc "schedule SUBCOMMAND", "schedule subcommands"
+    subcommand "schedule", Schedule
+
+    desc "waf SUBCOMMAND", "waf subcommands"
+    subcommand "waf", Waf
+
+    desc "build", "Build deployment"
+    option :templates, type: :boolean, desc: "Build only cfn templates. Skip docker build"
+    def build
+      Build.new(options).run
     end
 
-    # Need to boot jets at this point for commands like: jets routes, deploy, console, etc to work
-    boot_jets
-    command_class = lookup(full_command)
-    if command_class
-      command_class.perform(full_command, thor_args)
-    else
-      main_help
-    end
-  end
-
-  # The commands new and help do not call Jets.boot. Main reason is that Jets.boot should be run in a Jets project.
-  #
-  #   * jets new - need to generate a project outside a project folder.
-  #   * jets help - don't need to be in a project folder general help.
-  #
-  # When you are inside a project folder though, more help commands are available and displayed.
-  #
-  def boot_jets
-    set_jets_env_from_cli_arg!
-    command = thor_args.first
-    unless %w[new help].include?(command)
-      Jets::Turbo.new.charge # handles Afterburner mode
-      Jets.boot
-    end
-  end
-
-  def version_requested?
-    #   jets --version
-    #   jets -v
-    version_flags = ["--version", "-v"]
-    @given_args.length == 1 && !(@given_args & version_flags).empty?
-  end
-
-  # Adjust JETS_ENV before boot_jets is called for the `jets deploy` command.  Must do this early in the process
-  # before Jets.boot because because `bundler_require` is called as part of the bootup process. It sets the Jets.env
-  # to whatever the JETS_ENV is at the time to require the right bundler group.
-  #
-  # Defaults to development when not set.
-  def set_jets_env_from_cli_arg!
-    # Pretty tricky, we need to use the raw @given_args as thor_args eventually calls Commands::Base#eager_load!
-    # which uses Jets.env before we get a chance to override ENV['JETS_ENV']
-    command, env = @given_args[0..1]
-
-    return unless %w[deploy delete console c].include?(command)
-    env = nil if env&.starts_with?('-')
-    return unless env
-    ENV['JETS_ENV'] = env ? env : 'development'
-  end
-
-  # thor_args normalized the args Array to work with our Thor command
-  # subclasses.
-  # 1. The namespace is stripe
-  # 2. Help is shifted in front if a help flag is detected
-  def thor_args
-    args = @given_args.clone
-
-    # jets generate is a special command requires doesn't puts out the help menu automatically when
-    # `jets generate` is called without additional args.  We'll take it over early and fix it here.
-    generate = full_command == "generate"
-
-    if generate && ((args.size == 1 || help_flags.include?(args.last)) || args.size == 2)
-      puts Jets::Generator.help
-      exit
+    desc "bootstrap", "Bootstrap deployment", hide: true
+    yes_option
+    def bootstrap
+      Bootstrap.new(options).run
     end
 
-    help_args = args & help_flags
-    unless help_args.empty?
-      # Allow using help flags at the end of the command to trigger help menu
-      args -= help_flags # remove "help" and help flags from args
-      args[0] = meth # first command will always be the meth now since
-        # we removed the help flags
-      args.unshift("help")
-      args.compact!
-      return args
+    desc "clean", "Clean local build folder"
+    def clean
+      Clean.new(options).run
     end
 
-    # reassigns the command without the namespace if reached here
-    args[0] = meth
-    args.compact
-  end
-
-  def meth
-    return nil unless full_command
-
-    if full_command.include?(':')
-      full_command.split(':').pop
-    else
-      full_command
-    end
-  end
-
-  ALIASES = {
-    "g"  => "generate",
-    "c"  => "console",
-    "s"  => "server",
-    "db" => "dbconsole",
-  }
-  def full_command
-    # Removes any args that starts with -, those are option args.
-    # Also remove "help" flag.
-    args = @given_args.reject {|o| o =~ /^-/ } - help_flags
-    command = args[0] # first argument should always be the command
-    command = ALIASES[command] || command
-    Jets::Commands::Base.autocomplete(command)
-  end
-
-  # 1. look up Thor tasks
-  # 2. look up Rake tasks
-  # 3. help menu with all commands when both Thor and Rake tasks are not found
-  def lookup(full_command)
-    thor_task_found = Jets::Commands::Base.namespaced_commands.include?(full_command)
-    if thor_task_found
-      return Jets::Commands::Base.klass_from_namespace(namespace)
+    desc "deploy", "Deploy stack"
+    yes_option
+    option :templates, type: :boolean, hide: true, desc: "Deploy only cfn templates. Skip docker build. Experimental option. May be removed."
+    def deploy
+      Deploy.new(options).run
     end
 
-    return unless jets_project?
-
-    Jets::Commands::RakeCommand if rake_task_found
-  end
-
-  def rake_task_found
-    return false unless full_command # can be nil for subcommands and would break jets help without this check
-    bracket_regex = /\[.*/ # matches everything after the first [
-    command = full_command.sub(bracket_regex, '') # remove everything after the first [
-    namespaced_commands = Jets::Commands::RakeCommand.namespaced_commands.map {|x| x.sub(bracket_regex, '') }
-    namespaced_commands.include?(command)
-  end
-
-  def jets_project?
-    File.exist?("config/application.rb")
-  end
-
-  # ["-h", "-?", "--help", "-D", "help"]
-  def help_flags
-    Thor::HELP_MAPPINGS + ["help"]
-  end
-
-  def namespace
-    return nil unless full_command
-
-    if full_command.include?(':')
-      words = full_command.split(':')
-      words.pop
-      words.join(':')
-    end
-  end
-
-  def main_help
-    shell = Thor::Shell::Basic.new
-    shell.say "Commands:"
-    shell.print_table(thor_list, :indent => 2, :truncate => true)
-
-    if jets_project? && !rake_list.empty?
-      shell.say "\nCommands via rake:"
-      shell.print_table(rake_list, :indent => 2, :truncate => true)
+    desc "delete", "Delete stack"
+    yes_option
+    def delete
+      Delete.new(options).run
     end
 
-    shell.say "\n"
-    shell.say main_help_body
-  end
+    desc "functions", "List functions"
+    option :full, default: false, type: :boolean, desc: "Show full function names with the project namespace"
+    def functions
+      Functions.new(options).run
+    end
+    map "funs" => :functions
+    # use string "funs", otherwise `jets fun` results in Thor sort error
 
-  def thor_list
-    Jets::Commands::Base.help_list(show_all_tasks)
-  end
+    Init.cli_options.each { |args| option(*args) }
+    register(Init, "init", "init", "Initialize project for Jets")
 
-  def rake_list
-    list = Jets::Commands::RakeCommand.formatted_rake_tasks(show_all_tasks)
-    list.map do |array|
-      array[0] = "jets #{array[0]}"
-      array
+    desc "ping", "Ping", hide: true
+    def ping
+      Ping.new(options).run
+    end
+
+    desc "projects", "List projects"
+    paging_options
+    format_option(default: "space")
+    def projects
+      Projects.new(options).run
+    end
+
+    desc "login [TOKEN]", "login"
+    def login(token = nil)
+      Login.new(options.merge(token: token)).run
+    end
+
+    desc "logout", "logout"
+    def logout
+      Logout.new(options).run
+    end
+
+    desc "logs", "Tail the logs"
+    option :since, desc: "From what time to begin displaying logs.  By default, logs will be displayed starting from 10m in the past. The value provided can be an ISO 8601 timestamp or a relative time. Examples: 10m 2d 2w"
+    option :follow, aliases: :f, default: false, type: :boolean, desc: " Whether to continuously poll for new logs. To exit from this mode, use Control-C."
+    option :format, default: "plain", desc: "The format to display the logs. IE: detailed, short, plain.  For plain, no timestamp are shown."
+    option :filter_pattern, desc: "The filter pattern to use. If not provided, all the events are matched"
+    # option :log_group_name, aliases: :n, desc: "The log group name.  Default: /aws/lambda/#{Jets.project.namespace}-controller"
+    option :log_group_name, aliases: :n, desc: "The log group name.  Default: /aws/lambda/NAMESPACE-controller"
+    option :refresh_rate, default: 1, type: :numeric, desc: "How often to refresh the logs in seconds."
+    option :wait_exists, default: true, type: :boolean, desc: "Whether to wait until the log group exists.  By default, it will wait."
+    def logs
+      Logs.new(options).run
+    end
+
+    desc "call", "Call Lambda function"
+    function_name_option
+    verbose_option
+    option :event, aliases: :e, default: "{}", desc: "JSON event to provide to Lambda function as input"
+    option :invocation_type, aliases: :t, default: "RequestResponse", desc: "Invocation type.  IE: RequestResponse, Event, DryRun"
+    def call
+      $stdout.sync = $stderr.sync = true
+      $stdout = $stderr
+      Call.new(options).run
+    rescue Jets::CLI::Call::Error => e
+      puts "ERROR: #{e.message}".color(:red)
+      abort "Unable to find the function.  Please check the function name and try again."
+    end
+
+    desc "curl PATH", "Curl Lambda function"
+    function_name_option
+    verbose_option
+    option :request, aliases: :X, default: "GET", desc: "HTTP request method. IE: GET, POST, PUT, DELETE, etc. Default: GET"
+    option :data, aliases: :d, desc: "HTTP request data. The @ character is used to read data from a file. IE: @data.json"
+    option :headers, aliases: :H, default: {}, type: :hash, desc: "HTTP request header. IE: -H 'Content-Type: application/json'"
+    option :cookie, aliases: :b, desc: "HTTP request cookie. IE: -b 'yummy_cookie=choco; tasty_cookie=strawberry'. If no '=' is used, it is treated as a file with the name of the cookie"
+    option :cookie_jar, aliases: :c, desc: "HTTP request cookie jar. IE: -c cookie.jar"
+    option :trim, aliases: :t, default: nil, type: :boolean, desc: "Trim large values in the response"
+    def curl(path)
+      Curl.new(options.merge(path: path)).run
+    end
+
+    desc "exec", "REPL or execute commands on AWS Lambda"
+    function_name_option
+    verbose_option
+    def exec(*command)
+      Exec.new(options.merge(command: command)).run
+    end
+
+    # Shorthand command for jets release:rollback which works too but is hidden
+    desc "rollback VERSION", "Rollback to a previous release"
+    option :yes, aliases: :y, type: :boolean, desc: "Skip are you sure prompt"
+    def rollback(version)
+      Jets::CLI::Release::Rollback.new(options.merge(version: version)).run
+    end
+
+    desc "stacks", "List deployed stacks"
+    paging_options
+    option :all_projects, desc: "Show all stacks across all projects", type: :boolean, default: false
+    format_option(default: "space")
+    def stacks
+      Stacks.new(options).run
+    end
+
+    desc "stop", "Stops the deploy"
+    yes_option
+    def stop
+      Stop.new(options).run
+    end
+
+    # Normally should not have to use this. This is why it's hidden.
+    # Only useful if some reason the remote delete leaves remaining resources behind.
+    desc "teardown", "Teardown stack", hide: true
+    yes_option
+    def teardown
+      warn "WARN: You should use `jets delete` instead of `jets teardown`".color(:yellow)
+      warn "This is for debugging and will not delete the Jets API deployment record"
+      Teardown.new(options).run
+    end
+
+    desc "url", "App url"
+    format_option(default: "space")
+    option :all, type: :boolean, desc: "Show all urls including queue urls"
+    def url
+      Url.new(options).run
+    end
+
+    desc "version", "Prints version"
+    def version
+      puts "Jets #{VERSION}"
     end
   end
-
-  def show_all_tasks
-    @given_args.include?("--all") || @given_args.include?("-A")
-  end
-
-  def main_help_body
-    <<-EOL
-Add -h to any of the commands for more help.  Examples:
-
-  jets call -h
-  jets routes -h
-  jets deploy -h
-  jets status -h
-  jets dynamodb:create -h
-  jets db:create -h
-
-EOL
-  end
-
 end

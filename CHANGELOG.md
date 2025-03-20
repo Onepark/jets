@@ -3,6 +3,160 @@
 All notable changes to this project will be documented in this file.
 This project *loosely tries* to adhere to [Semantic Versioning](http://semver.org/).
 
+## [6.0.5] - 2024-12-04
+- [#737](https://github.com/rubyonjets/jets/pull/737) jets login prompt message when likely ci env
+
+## [6.0.4] - 2024-11-13
+- [#735](https://github.com/rubyonjets/jets/pull/735) fix du check for macosx
+- [#736](https://github.com/rubyonjets/jets/pull/736) git commit check
+
+## [6.0.3] - 2024-05-30
+- [#730](https://github.com/rubyonjets/jets/pull/730) scheduler translate scheduler.schedule key
+
+## [6.0.2] - 2024-05-30
+- [#728](https://github.com/rubyonjets/jets/pull/728) jets git:push
+- [#729](https://github.com/rubyonjets/jets/pull/729) dont show queue url by default
+
+## [6.0.1] - 2024-05-27
+- [#727](https://github.com/rubyonjets/jets/pull/727) small fixes
+- associated outputs concept
+- jets concurrency show lambda function name
+- jets git:push command
+- pretty time helper
+- update github issue template bug report
+
+## [6.0.0] - 2024-05-23
+
+* Rails Support
+* Hooks Support
+* Docker Support
+* CloudFront CDN
+* Lambda Function URL
+* Prewarm and Provisioned Concurrency
+* Reserved Concurrency
+* Jets Job Support
+* CI Support
+* WAF
+* Remote Runner
+* Jets Exec REPL
+* Release History and Rollback Ability
+* Events
+
+## [5.0.14] - 2024-05-20
+- [#719](https://github.com/rubyonjets/jets/pull/719) Support for s3 event sns configuration
+- [#722](https://github.com/rubyonjets/jets/pull/722) Sets config.cache_classes to true in test env
+
+## [5.0.13] - 2024-04-26
+- [#720](https://github.com/rubyonjets/jets/pull/720) Update docs link in status.rb
+- [#723](https://github.com/rubyonjets/jets/pull/723) fix prewarming post deploy
+
+## [5.0.12] - 2024-04-15
+- [#718](https://github.com/rubyonjets/jets/pull/718) fixes for dotenv 3.1
+
+## [5.0.11] - 2024-03-20
+- [#711](https://github.com/rubyonjets/jets/pull/711) Fix controller testing in jets 5 - handling of params and query
+- [#715](https://github.com/rubyonjets/jets/pull/715) remove force_encoding that causes issues for international characters
+
+## [5.0.10] - 2024-02-08
+- [#706](https://github.com/rubyonjets/jets/pull/706) permit YAML load of Date class
+- [#708](https://github.com/rubyonjets/jets/pull/708) Fix Prewarming
+- [#709](https://github.com/rubyonjets/jets/pull/709) Remove iam_class_policy warning from Jobs
+
+## [5.0.9] - 2024-01-08
+- [#704](https://github.com/rubyonjets/jets/pull/704) fix jets --version outside of jets project
+- update jets generate job scheduled template JSON.dump
+
+## [5.0.8] - 2023-12-24
+- [#702](https://github.com/rubyonjets/jets/pull/702) prettier event helpers IE: s3_events vs s3_event_payloads
+
+## [5.0.7] - 2023-12-24
+- [#699](https://github.com/rubyonjets/jets/pull/699) cache Stack.lookup output in class memory
+- [#700](https://github.com/rubyonjets/jets/pull/700) update s3 sns and sqs event helpers to return all events
+- [#701](https://github.com/rubyonjets/jets/pull/701) fix s3_event and change method to s3_event_payloads
+
+## [5.0.6] - 2023-12-21
+- [#698](https://github.com/rubyonjets/jets/pull/698) make iam_policy additive to default_iam_policy for event
+- jets new environments/production.rb dont include assets.compile for api mode
+
+## [5.0.5] - 2023-12-19
+- [#697](https://github.com/rubyonjets/jets/pull/697) fix sqs_queue output url camelcase name
+
+## [5.0.4] - 2023-12-17
+- [#695](https://github.com/rubyonjets/jets/pull/695) dont run reconfigure webpacker unless using
+- [#696](https://github.com/rubyonjets/jets/pull/696) improve deploy failure message by showing nested stack failure message
+- update delete error messaging to stack
+
+## [5.0.3] - 2023-12-15
+- [#691](https://github.com/rubyonjets/jets/pull/691) jets deploy fix for empty project
+- [#692](https://github.com/rubyonjets/jets/pull/692) fix jets deploy for empty project
+- [#693](https://github.com/rubyonjets/jets/pull/693) do not include sprockets-jets in new app generator for api mode
+- [#694](https://github.com/rubyonjets/jets/pull/694) fix jets deploy for empty project
+
+## [5.0.2] - 2023-12-11
+- [#688](https://github.com/rubyonjets/jets/pull/688) improve releases:info output
+
+## [5.0.1] - 2023-12-11
+- [#680](https://github.com/rubyonjets/jets/pull/680) fix apigw gateway replacement warning prompt
+- [#682](https://github.com/rubyonjets/jets/pull/682) Replace puts with Jets.logger.info in jobs
+- [#683](https://github.com/rubyonjets/jets/pull/683) Fix broken links in README and CONTRIBUTING
+- [#684](https://github.com/rubyonjets/jets/pull/684) improve cli usage invalid command and options handling
+- [#685](https://github.com/rubyonjets/jets/pull/685) rollback usage cleanup
+- [#686](https://github.com/rubyonjets/jets/pull/686) remove need for sprockets-jets dependency
+- [#687](https://github.com/rubyonjets/jets/pull/687) jets releases:info command
+- default logging.event to false for generated production
+
+## [5.0.0] - 2023-12-05
+Single Lambda Function for Controllers
+* For controllers, a single Lambda function is deployed going forward.
+* APIGW serves as proxy endpoint for requests to the single Lambda function. Techniquely, there are 2 APIGW endpoints.
+* Jobs and other classes still create a discrete lambda function per Ruby method.
+
+Jets Engines support
+* Jets Engines closely resemble Rails engines.
+* Use as many Rails middlewares as possible
+
+Jets Controllers are "ActionController and ActionView compatible."
+* View Scope has first-class citizens access to Jets Controller instances.
+* Breaking Change: `resources :posts` and `delete` route method routes to controller `destroy` method like rails instead of `delete` method.
+
+Jets Controllers now support:
+* around filters
+* cache control and etag caching support
+* content security policy
+* cookies support via actionpack
+* flash support
+* forgery protection improvements
+* importmap support
+* i18n support
+
+New Jets CLI structure that
+* Close to Rails CLI structure
+
+Jets Pro support
+* deploys, release history, rollback support
+* use jets-api gem
+
+Refactor CloudFormation Builders
+* Use CamelCase properties internally
+* Short name template filenames and class names without the _builder.
+* Fully qualify LambdaFunction logical id.
+
+Misc
+* Remove afterburner turbo and mega mode to prepare for container-based Rails support.
+* Autoloaders refactor. gem (Jets internal), main (user app), once (user app)
+* CORS via with middleware only.
+* Improve ActionMailer integration. Improve preview support.
+* logger active support logger and tagged logging support
+* dynamodb event conventional table namespace
+* enable iot rule by default bug fix
+* create named route methods for all CRUD actions
+* Jets.cache support
+
+Breaking changes:
+* Pass request.headers straight without downcase. IE: `X-Amzn-Trace-Id`. Introduce request.downcase_headers instead.
+* Jets.config.prewarm.concurrency option removed.
+* dynomite decoupling and integration improvements
+
 ## [4.0.10] - 2023-12-04
 - [#678](https://github.com/boltops-tools/jets/pull/678) handle option method or http_method from route state
 
@@ -28,6 +182,7 @@ This project *loosely tries* to adhere to [Semantic Versioning](http://semver.or
 
 ## [4.0.3] - 2023-08-03
 - [#657](https://github.com/boltops-tools/jets/pull/657) [Fix] ApiGateway for local Middleware: fix query_string_parameters
+Breaking Changes:
 
 ## [4.0.2] - 2023-08-03
 - [#660](https://github.com/boltops-tools/jets/pull/660) Fix prewarming
@@ -277,7 +432,7 @@ This project *loosely tries* to adhere to [Semantic Versioning](http://semver.or
 - #424 md5 fix subtle bug when code doesnt get uploaded from newly generated shims
 - #425 add hosted zone id support
 - #426 use headers origin for actual host in case of cloudfront in front
-- #428 fixes to JETS_BUILD_NO_INTERNET env var option
+- #428 fixes to JETS_NO_INTERNET env var option
 - #429 fix simple function tmp_loader
 
 ## [2.3.11]
@@ -1107,7 +1262,7 @@ This project *loosely tries* to adhere to [Semantic Versioning](http://semver.or
 - add versions to gemspec dependencies
 
 ## [0.6.1]
-- only prewarm if Jets::PreheatJob.warm available
+- only prewarm if Jets::PreheatEvent.warm available
 
 ## [0.6.0]
 - fine grain iam policy abilities: pull request #13 from tongueroo/iam-policy
